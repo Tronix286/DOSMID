@@ -9,9 +9,8 @@ Used piece of software codes from third-party peoples, eg:
 New DOSMid options:
 
  /cms=XXX  Force dosmid to use Creative Music System / Game Blaster
-           on port XXX. If not forced, DOSMID use the default port 220h. 
-           The port part is optional, that means you can use "/cms" 
-           to just force CMS usage.
+           on port XXX. The port part is optional, that means you can 
+           use "/cms" to just force CMS usage on default 220h port.
 
 
 ============================= ORIGINAL DOSMID.TXT
