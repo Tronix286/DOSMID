@@ -1,4 +1,21 @@
+DOSMid Copyright (C) 2014-2018 Mateusz Viste
+Creative Music System / Game Blaster output support version (C) Tronix 2021
 
+Used piece of software codes from third-party peoples, eg:
+- DEATHSHADOW'S Paku-Paku game by Jason M. Knight
+- SAATunes v 1.04 lib by Bobcatmodder Jacob Field
+- Arduino YM2149 MIDI Synth by yukimizake
+
+New DOSMid options:
+
+ /cms=XXX  Force dosmid to use Creative Music System / Game Blaster
+           on port XXX. If not forced, DOSMID use the default port 220h. 
+           The port part is optional, that means you can use "/cms" 
+           to just force CMS usage.
+
+
+============================= ORIGINAL DOSMID.TXT
+           
          DOSMid - a low-requirements MIDI and MUS player for DOS
                     http://dosmid.sourceforge.net
 
