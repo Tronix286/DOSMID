@@ -1,0 +1,14 @@
+Begin3
+Title:           DOSMid
+Version:         0.9.5
+Entered-date:    10 Dec 2018
+Description:     MIDI player for many synthesizers (AWE,MPU401,OPL,GUS...)
+Keywords:        midi,mus,rmid,player
+Author:          Mateusz Viste
+Maintained-by:
+Primary-site:
+Alternate-site:
+Original-site:   http://dosmid.sourceforge.net/
+Platforms:       DOS
+Copying-policy:  BSD
+End

@@ -1,0 +1,96 @@
+
+* DOSMid history file *
+
+
+DOSMid v0.9.5 [10 Dec 2018]
+ - Fixed file-reading module (buff corruption on first cache boundary read).
+
+DOSMid v0.9.4 [09 Dec 2018]
+ - UI displays channels as 'piano' if no instrument is explicitely loaded,
+ - reduced libc dependencies (smaller footprint),
+ - displaying the MIDI tracks count,
+ - displaying the amount of memory used by the MIDI file,
+ - backspace key jumps to previous song of the playlist,
+ - minor memory optimizations,
+ - fixed a memory leak in midi code,
+ - fixed RIFF-RMID header decoding,
+ - fixed playlist gap delay computation (fixed /delay behavior, too),
+ - adaptations to compile in small memory model (smaller, faster),
+ - removed /log from the default build,
+ - /noxms can be passed via config file now,
+ - GUS support (requires the ULTRAMID TSR).
+
+DOSMid v0.9.3 [06 Feb 2018]
+ - memory optimization (25% less RAM needed when loading files),
+ - improved memory usage when using /noxms.
+
+DOSMid v0.9.2 [06 Jun 2017]
+ - fixed parsing of the /SBMIDI=xxx value (bug reported by James-F),
+ - sequential playlist playing (inspired by a patch from Graham Wiseman).
+
+DOSMid v0.9.1 [19 Nov 2016]
+ - resetting channels to "all piano" before playing MIDI files,
+ - syx files can be set from within DOSMID.CFG now,
+ - configurable extra delay before playing files (/delay=X).
+
+DOSMid v0.9 [21 May 2016]
+ - increased SYX delaying to 40ms (solves buffering troubles on MT-32 gears),
+ - fixes around how OPL percussion instruments are emulated,
+ - support for custom sound banks (IBK on OPL, SBK on AWE),
+ - a configuration file allows to set default settings (dosmid.cfg),
+ - the 2s silence gap before songs is inserted only in playlist mode now,
+ - sound hardware is initialized once, instead of being inited for every song,
+ - fixed playlist parsing so DOSMid won't freeze on an empty m3u playlist,
+ - load more textual information from the MIDI file (titles, markers, text),
+ - file's information is displayed on a dynamic scroll when over 5 lines,
+ - reorganized the display so more MIDI textual data fits on the screen,
+ - fixed OPL detection for cards intolerant to hw calls during init (CT2760),
+ - command-line arguments are case-insensitive,
+ - renamed the /delay command-line option to /xmsdelay,
+ - DOSMid refuses to play corrupted files, instead of ignoring MIDI errors.
+
+DOSMid v0.8 [18 Sep 2015]
+ - SBMIDI support (can drive MIDI synths attached to SB 1.x and 2.x cards),
+ - serial (RS-232) output support (/com=xxx or /com1..4),
+ - implemented 'controller' MIDI support on OPL output,
+ - added support for relaying SYSEX messages to the MIDI device,
+ - DOSMid adds a 2s silence gap before each song,
+ - support for monochrome video modes (autodetected),
+ - fixed parsing of hex I/O ports with non-numerical chars (like "3f8"),
+ - reduced timing inaccuracy from ~0.02% to <0.005% (relies on PIT's quality),
+ - restoring initial video mode after DOSMid quits,
+ - reliable detection and reporting of out of memory conditions,
+ - /noxms handles more than 64K of memory (bigger files can be played),
+ - support for custom SYSEX initialization via a SYX file (/syx=FILE),
+ - "expensive" features can be easily disabled at compile-time (AWE, OPL),
+ - screen refresh optimizations - runs without lagging on my 8086 now.
+
+DOSMid v0.7 [29 Jul 2015]
+ - native support for SB AWE32/AWE64 sound cards (no need for AWEUTIL),
+ - OPL2/OPL3 output support via emulated (waveform) GM patches,
+ - support for *.MUS files, as used in many Doom-like games by Id Software,
+ - optimized MIDI loading routines - MIDI files are loading twice as fast now,
+ - added a pause function (space key),
+ - song's filename is displayed during load time,
+ - the /nodelay option is no longer default (use /delay to force).
+
+DOSMid v0.6.1 [01 Jul 2015]
+ - fixed a NULL pointer dereferencing bug,
+ - possible memory access troubles are reported clearly to the user,
+ - forcing GM patches to MPU because some songs rely on default instruments,
+ - refactored the sound output code (and added /nosound).
+
+DOSMid v0.6 [22 Jun 2015]
+ - fixed a timing issue leading sometimes to desynchronization of tracks,
+ - fixed a bug that could potentially lead to XMS memory trashing,
+ - configurable MPU port via the BLASTER variable or /mpu=XXX,
+ - DOSMid fails gracefully when no MPU401 is present (instead of freezing),
+ - added software volume controls under '+' and '-' keys,
+ - the MPU is reinitialized to default values before playing any new tracks,
+ - interface fitted with a sexier color scheme,
+ - using CPU-friendly calls when waiting for notes (disabled with /fullcpu),
+ - very basic support for reading M3U playlists,
+ - added a verbose mode for debugging needs (/log=FILE).
+
+DOSMid v0.5 [10 Aug 2014]
+ - first public release.
