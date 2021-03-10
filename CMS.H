@@ -5,7 +5,7 @@
 
 typedef struct {
         unsigned char note;
-        unsigned char volume;
+        unsigned char priority;
 } mid_channel;
 
 void cmsReset(unsigned short port);

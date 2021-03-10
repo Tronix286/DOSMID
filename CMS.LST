@@ -1,41 +1,23 @@
 .387
-		PUBLIC	debug_log_
+.386p
 		PUBLIC	cmsWrite_
 		PUBLIC	cmsNull_
 		PUBLIC	cmsReset_
 		PUBLIC	cmsDisableVoice_
 		PUBLIC	cmsSetVolume_
 		PUBLIC	cmsSound_
-		PUBLIC	cmsNoteOn_
 		PUBLIC	cmsNoteOff_
+		PUBLIC	cmsTick_
+		PUBLIC	cmsNoteOn_
+		PUBLIC	cmsController_
 		PUBLIC	_ChanEnableReg
 		PUBLIC	_cms_synth
 		PUBLIC	_CmsOctaveStore
 		PUBLIC	_cmsPort
-		EXTRN	fopen_:BYTE
-		EXTRN	fprintf_:BYTE
-		EXTRN	fclose_:BYTE
 		EXTRN	_small_code_:BYTE
 DGROUP		GROUP	CONST,CONST2,_DATA,_BSS
 _TEXT		SEGMENT	BYTE PUBLIC USE16 'CODE'
 		ASSUME CS:_TEXT, DS:DGROUP, SS:DGROUP
-debug_log_:
-    push        dx 
-    push        bp 
-    mov         bp,sp 
-    mov         dx,offset DGROUP:L$19 
-    mov         ax,offset DGROUP:L$20 
-    call        near ptr fopen_ 
-    mov         dx,ax 
-    push        word ptr 6[bp] 
-    push        ax 
-    call        near ptr fprintf_ 
-    add         sp,4 
-    mov         ax,dx 
-    call        near ptr fclose_ 
-    pop         bp 
-    pop         dx 
-    ret         
 cmsWrite_:
     inc         dx 
     xchg        al,ah 
@@ -70,20 +52,23 @@ cmsReset_:
     call        near ptr cmsNull_ 
     xor         al,al 
 L$2:
+    xor         bx,bx 
     mov         bl,al 
-    xor         bh,bh 
-    mov         byte ptr _CmsOctaveStore[bx],bh 
+    xor         ah,ah 
+    mov         byte ptr _CmsOctaveStore[bx],ah 
     inc         al 
     cmp         al,0bH 
     jb          L$2 
+    mov         byte ptr _ChanEnableReg,ah 
+    mov         byte ptr _ChanEnableReg+1,ah 
     xor         al,al 
-    mov         byte ptr _ChanEnableReg,bh 
-    mov         byte ptr _ChanEnableReg+1,bh 
 L$3:
+    xor         bx,bx 
     mov         bl,al 
-    xor         bh,bh 
-    shl         bx,1 
-    mov         word ptr _cms_synth[bx],0 
+    add         bx,bx 
+    xor         cl,cl 
+    mov         byte ptr _cms_synth[bx],cl 
+    mov         byte ptr _cms_synth+1[bx],cl 
     inc         al 
     cmp         al,0cH 
     jb          L$3 
@@ -157,6 +142,7 @@ L$6:
     mov         sp,bp 
     pop         bp 
     pop         di 
+L$7:
     pop         si 
     pop         cx 
     ret         
@@ -183,21 +169,21 @@ cmsSound_:
     sub         di,10H 
     mov         cl,byte ptr -6[bp] 
     cmp         cl,6 
-    jl          L$7 
+    jl          L$8 
     add         di,3 
-L$7:
+L$8:
     mov         ah,al 
     mov         al,byte ptr _CmsOctaveStore[di] 
     mov         bh,byte ptr -2[bp] 
     test        bl,1 
-    jne         L$8 
+    jne         L$9 
     and         al,0f0H 
-    jmp         near ptr L$9 
-L$8:
+    jmp         near ptr L$10 
+L$9:
     and         al,0fH 
     mov         cl,4 
     shl         bh,cl 
-L$9:
+L$10:
     or          al,bh 
     mov         byte ptr _CmsOctaveStore[di],al 
     call        near ptr cmsWrite_ 
@@ -218,9 +204,9 @@ L$9:
     xor         di,di 
     mov         cl,byte ptr -6[bp] 
     cmp         cl,6 
-    jl          L$10 
+    jl          L$11 
     inc         di 
-L$10:
+L$11:
     mov         al,byte ptr _ChanEnableReg[di] 
     mov         ah,1 
     mov         cl,bl 
@@ -233,140 +219,133 @@ L$10:
     pop         di 
     pop         si 
     ret         2 
+cmsNoteOff_:
+    push        bx 
+    mov         ah,0cH 
+    xor         al,al 
+    jmp         L$13 
+L$12:
+    inc         al 
+    cmp         al,0cH 
+    jae         L$14 
+L$13:
+    xor         bx,bx 
+    mov         bl,al 
+    add         bx,bx 
+    cmp         dl,byte ptr _cms_synth[bx] 
+    jne         L$12 
+    mov         ah,al 
+L$14:
+    cmp         ah,0cH 
+    je          L$15 
+    xor         bx,bx 
+    mov         bl,ah 
+    mov         ax,bx 
+    call        near ptr cmsDisableVoice_ 
+    add         bx,bx 
+    mov         byte ptr _cms_synth[bx],0 
+L$15:
+    pop         bx 
+cmsTick_:
+    ret         
 cmsNoteOn_:
     push        cx 
     push        si 
     push        di 
     push        bp 
     mov         bp,sp 
-    sub         sp,4 
-    mov         cl,al 
+    sub         sp,6 
     mov         byte ptr -2[bp],dl 
     mov         byte ptr -4[bp],bl 
-    mov         ch,dl 
-    inc         ch 
-    mov         al,ch 
-    xor         ah,ah 
-    mov         bx,0cH 
+    test        bl,bl 
+    je          L$19 
+    mov         bl,dl 
+    inc         bl 
+    xor         ax,ax 
+    mov         al,bl 
+    mov         cx,0cH 
     cwd         
-    idiv        bx 
+    idiv        cx 
     dec         ax 
     mov         dl,al 
     inc         al 
     mov         ah,0cH 
     mul         ah 
-    mov         dh,ch 
-    sub         dh,al 
-    mov         bh,0cH 
-    xor         bl,bl 
-    jmp         L$12 
-L$11:
-    inc         bl 
-    cmp         bl,0cH 
-    jae         L$13 
-L$12:
-    mov         al,bl 
-    xor         ah,ah 
-    mov         si,ax 
-    shl         si,1 
-    cmp         byte ptr _cms_synth[si],0 
-    jne         L$11 
-    mov         bh,bl 
-L$13:
-    cmp         bh,0cH 
-    jne         L$14 
-    mov         al,byte ptr -4[bp] 
-    xor         ah,ah 
-    push        ax 
-    mov         al,byte ptr -2[bp] 
-    push        ax 
-    mov         al,cl 
-    push        ax 
-    mov         ax,offset DGROUP:L$21 
-    push        ax 
-    call        near ptr debug_log_ 
-    add         sp,8 
-    jmp         near ptr L$6 
-L$14:
-    mov         al,byte ptr -4[bp] 
-    xor         ah,ah 
-    mov         si,ax 
-    mov         cl,byte ptr _atten[si] 
-    xor         ch,ch 
-    push        cx 
-    mov         al,dl 
-    mov         di,ax 
-    mov         al,dh 
-    mov         si,ax 
-    mov         al,byte ptr _noteAdr[si] 
-    mov         dx,ax 
-    mov         al,bh 
-    mov         si,ax 
-    mov         bx,di 
-    call        near ptr cmsSound_ 
-    shl         si,1 
-    mov         al,byte ptr -2[bp] 
-    mov         byte ptr _cms_synth[si],al 
-    mov         al,byte ptr -4[bp] 
-    mov         byte ptr _cms_synth+1[si],al 
-    jmp         near ptr L$6 
-cmsNoteOff_:
-    push        bx 
-    push        cx 
-    mov         ah,dl 
-    mov         cl,0cH 
+    sub         bl,al 
+    mov         byte ptr -6[bp],bl 
+    mov         ah,0cH 
     xor         al,al 
-    jmp         L$16 
-L$15:
+    jmp         L$17 
+L$16:
     inc         al 
     cmp         al,0cH 
-    jae         L$17 
-L$16:
-    mov         dl,al 
-    xor         dh,dh 
-    mov         bx,dx 
-    shl         bx,1 
-    cmp         ah,byte ptr _cms_synth[bx] 
-    jne         L$15 
-    mov         cl,al 
+    jae         L$18 
 L$17:
-    cmp         cl,0cH 
-    jne         L$18 
-    mov         ax,offset DGROUP:L$22 
-    push        ax 
-    call        near ptr debug_log_ 
-    add         sp,2 
-    pop         cx 
-    pop         bx 
-    ret         
+    xor         bx,bx 
+    mov         bl,al 
+    add         bx,bx 
+    cmp         byte ptr _cms_synth[bx],0 
+    jne         L$16 
+    mov         ah,al 
 L$18:
-    mov         dl,cl 
+    cmp         ah,0cH 
+    je          L$6 
+    xor         bx,bx 
+    mov         bl,byte ptr -4[bp] 
+    xor         cx,cx 
+    mov         cl,byte ptr _atten[bx] 
+    push        cx 
     xor         dh,dh 
-    mov         ax,dx 
-    call        near ptr cmsDisableVoice_ 
+    xor         bx,bx 
+    mov         bl,byte ptr -6[bp] 
+    movzx       di,byte ptr _noteAdr[bx] 
+    movzx       si,ah 
     mov         bx,dx 
-    shl         bx,1 
-    mov         byte ptr _cms_synth[bx],dh 
-    pop         cx 
-    pop         bx 
-    ret         
+    mov         dx,di 
+    mov         ax,si 
+    call        near ptr cmsSound_ 
+    mov         bx,si 
+    add         bx,si 
+    mov         al,byte ptr -2[bp] 
+    mov         byte ptr _cms_synth[bx],al 
+    mov         al,byte ptr -4[bp] 
+    mov         byte ptr _cms_synth+1[bx],al 
+    jmp         near ptr L$6 
+L$19:
+    xor         dx,dx 
+    mov         dl,byte ptr -2[bp] 
+    xor         ah,ah 
+    call        near ptr cmsNoteOff_ 
+    jmp         near ptr L$6 
+cmsController_:
+    push        cx 
+    push        si 
+    mov         ch,bl 
+    cmp         dl,7 
+    jne         L$7 
+    xor         cl,cl 
+    jmp         L$21 
+L$20:
+    inc         cl 
+    cmp         cl,0cH 
+    jae         L$7 
+L$21:
+    xor         ax,ax 
+    mov         al,cl 
+    mov         si,ax 
+    add         si,ax 
+    cmp         byte ptr _cms_synth[si],0 
+    je          L$20 
+    xor         bx,bx 
+    mov         bl,ch 
+    xor         dx,dx 
+    mov         dl,byte ptr _atten[bx] 
+    mov         bx,dx 
+    call        near ptr cmsSetVolume_ 
+    mov         byte ptr _cms_synth+1[si],ch 
+    jmp         L$20 
 _TEXT		ENDS
 CONST		SEGMENT	WORD PUBLIC USE16 'DATA'
-L$19:
-    DB	61H, 0
-L$20:
-    DB	63H, 6dH, 73H, 6cH, 6fH, 67H, 2eH, 6cH
-    DB	6fH, 67H, 0
-L$21:
-    DB	6eH, 6fH, 20H, 73H, 70H, 61H, 63H, 65H
-    DB	20H, 66H, 6fH, 72H, 20H, 6eH, 6fH, 74H
-    DB	65H, 20H, 43H, 68H, 3dH, 25H, 75H, 2cH
-    DB	6eH, 6fH, 74H, 65H, 3dH, 25H, 75H, 2cH
-    DB	76H, 65H, 6cH, 3dH, 25H, 75H, 0aH, 0
-L$22:
-    DB	6eH, 6fH, 74H, 20H, 66H, 6fH, 75H, 6eH
-    DB	64H, 0aH, 0
-
 CONST		ENDS
 CONST2		SEGMENT	WORD PUBLIC USE16 'DATA'
 CONST2		ENDS

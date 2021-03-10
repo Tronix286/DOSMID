@@ -1,5 +1,7 @@
 #ifdef CMS
 
+//#define CMS_DEBUG 1
+
 #ifdef CMS_DEBUG
 #include <stdio.h>
 #include <stdarg.h>
@@ -51,6 +53,10 @@ static unsigned char OctavReg[12] = {0x10,0x10,0x11,0x11,0x12,0x12,0x10,0x10,0x1
 unsigned char CmsOctaveStore[12];
 
 unsigned char ChanEnableReg[2] = {0,0};
+
+// Note priority
+unsigned char NotePriority;
+
 
 void __declspec( naked ) cmsWrite(void)
 {
@@ -115,9 +121,9 @@ void cmsReset(unsigned short port)
         for (i=0;i<MAX_CMS_CHANNELS;i++)
         {
                 cms_synth[i].note=0;
-                cms_synth[i].volume=0;
+                cms_synth[i].priority=0;
         }
-
+	NotePriority = 0;
 }
 
 void cmsDisableVoice(unsigned char voice)
@@ -293,8 +299,17 @@ void cmsNoteOff(unsigned char channel, unsigned char note)
     	return;
     }
 
+    // decrease priority for all notes greater than current
+    for (i=0; i<MAX_CMS_CHANNELS; i++)
+	if (cms_synth[i].priority > cms_synth[voice].priority )
+		cms_synth[i].priority = cms_synth[i].priority - 1;
+
+    
+    if (NotePriority != 0) NotePriority--;
+
     cmsDisableVoice(voice);
     cms_synth[voice].note = 0;
+    cms_synth[voice].priority = 0;
 }
 
 void cmsNoteOn(unsigned char channel, unsigned char note, unsigned char velocity)
@@ -312,6 +327,8 @@ void cmsNoteOn(unsigned char channel, unsigned char note, unsigned char velocity
 	octave = (note_cms / 12) - 1; //Some fancy math to get the correct octave
   	noteVal = note_cms - ((octave + 1) * 12); //More fancy math to get the correct note
 
+	NotePriority++;
+
         voice = MAX_CMS_CHANNELS;
     	for(i=0; i<MAX_CMS_CHANNELS; i++)
     	{
@@ -323,19 +340,35 @@ void cmsNoteOn(unsigned char channel, unsigned char note, unsigned char velocity
     	}
 
 
-  	// We run out of voices, ignore note on command
+  	// We run out of voices, find low priority voice
   	if(voice==MAX_CMS_CHANNELS)
   	{
-#ifdef CMS_DEBUG
-		debug_log("no space for note Ch=%u,note=%u,vel=%u\n",channel & 0xFF,note & 0xFF,velocity & 0xFF);
-#endif
-    		return;
+		unsigned char min_prior = cms_synth[0].priority;
+
+		// find note with min prioryty
+		voice = 0;
+    		for (i=1; i<MAX_CMS_CHANNELS; i++)
+		  if (cms_synth[i].priority < min_prior) 
+		  {
+			voice = i;
+                        min_prior = cms_synth[i].priority;
+                  }
+
+		// decrease all notes priority by one
+    		for (i=0; i<MAX_CMS_CHANNELS; i++)
+		  if (cms_synth[i].priority != 0)
+			cms_synth[i].priority = cms_synth[i].priority - 1;
+
+		// decrease current priority
+		if (NotePriority != 0) NotePriority--;
+
   	}
 
 	cmsSound(voice,noteAdr[noteVal],octave,atten[velocity],atten[velocity]); 
 
 	cms_synth[voice].note = note;
-	cms_synth[voice].volume = velocity;
+	cms_synth[voice].priority = NotePriority;
+
   } 
   else
         cmsNoteOff(channel,note);
@@ -370,16 +403,16 @@ void cmsTick(void)
 void cmsController(unsigned char channel, unsigned char id, unsigned char val)
 {
   unsigned char i;
-
-	if (id == 0x07) // set main volume
-        {
+    if ((id==121) || (id==123)) // All Sound/Notes Off
+    {
   		for (i=0;i<MAX_CMS_CHANNELS;i++) 
     		  if (cms_synth[i].note != 0)
 		 	{
-				cmsSetVolume(i,atten[val],atten[val]);
-				cms_synth[i].volume = val;
+    				cmsDisableVoice(i);
+				cms_synth[i].note = 0;
+				cms_synth[i].priority = 0;
 		 	}
-        }
+    }
 }
 
 #endif
