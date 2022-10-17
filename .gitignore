@@ -1,3 +1,4 @@
+*.err
 *.obj
 *.mid
 *.map

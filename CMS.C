@@ -193,7 +193,7 @@ void cmsReset(unsigned short port)
     		cms_synth[i].voice = 0;
     		cms_synth[i].velocity = 0;
         }
-        for (i=0;i<MAX_CMS_CHANNELS;i++)
+        for (i=0;i<16;i++)
         {
             channelpitch[i] = 8192;
         }
@@ -636,6 +636,11 @@ void cmsController(unsigned char channel, unsigned char id, unsigned char val)
     				cms_synth[i].voice = 0;
     				cms_synth[i].velocity = 0;
 		 	}
+		if (id==121)
+		{
+        		for (i=0;i<16;i++)
+            			channelpitch[i] = 8192;
+		}
     }
 }
 
