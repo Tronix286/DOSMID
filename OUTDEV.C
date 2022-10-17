@@ -415,6 +415,7 @@ void dev_noteoff(int channel, int note) {
 #ifdef CMS
       cmsNoteOff(channel, note);
 #endif
+      break;
     case DEV_RS232:
       rs232_write(outport, 0x80 | channel); /* 'note off' + channel selector */
       rs232_write(outport, note);           /* note number */
@@ -455,6 +456,11 @@ void dev_pitchwheel(int channel, int wheelvalue) {
     case DEV_OPL3:
 #ifdef OPL
       opl_midi_pitchwheel(outport, channel, wheelvalue);
+#endif
+      break;
+    case DEV_CMS:
+#ifdef CMS
+      cms_pitchwheel(outport, channel, wheelvalue);
 #endif
       break;
     case DEV_AWE:
