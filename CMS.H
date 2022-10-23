@@ -1,7 +1,7 @@
 #ifndef cms_h_sentinel
 #define cms_h_sentinel
 
-#define MAX_CMS_CHANNELS 12
+#define MAX_CMS_CHANNELS 10
 
 typedef struct {
         unsigned char note;

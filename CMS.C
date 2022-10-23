@@ -1,6 +1,7 @@
 #ifdef CMS
 
-//#define CMS_DEBUG 1
+//#define CMS_DEBUG		// verbose to CMSLOG.TXT debug file
+//#define DRUMS_ONLY		// for percussion debug purpouses
 
 #ifdef CMS_DEBUG
 #include <stdio.h>
@@ -200,13 +201,13 @@ void cmsReset(unsigned short port)
 	NotePriority = 0;
 }
 
-#if 0
 static void CMS_SetRegister(unsigned short regAddr, unsigned char reg, unsigned char val)
 {
     outp(regAddr + 1, reg); /* Select the register */
     outp(regAddr, val);     /* Set the value of the register */
 }
 
+#if 0
 void cmsDisableVoice(unsigned char voice)
 {
 	if (voice > 5)
@@ -441,7 +442,9 @@ void cms_pitchwheel(unsigned short oplport, int channel, int pitchwheel)
 				octave++;
 			}
 
+#ifndef DRUMS_ONLY
 		cmsSound(cms_synth[i].voice,CMSFreqMap[((notefreq-489)*128) / 489],octave,atten[cms_synth[i].velocity],atten[cms_synth[i].velocity]); 
+#endif
 
         }
       }
@@ -452,6 +455,18 @@ void cmsNoteOff(unsigned char channel, unsigned char note)
 {
   unsigned char i;
   unsigned char voice;
+
+    if (channel == 9)
+    {
+#ifdef CMS_DEBUG
+       debug_log("DRUM OFF note= %u\n",note);
+#endif
+	CMS_SetRegister(cmsPort+2, 0x19, 0x0);
+	CMS_SetRegister(cmsPort+2, 0x15, 0x0); // noise ch 11
+	cmsDisableVoice(11);
+    }
+    else
+    {
 
     voice = MAX_CMS_CHANNELS;
     for(i=0; i<MAX_CMS_CHANNELS; i++)
@@ -487,6 +502,7 @@ void cmsNoteOff(unsigned char channel, unsigned char note)
     cms_synth[voice].ch = 0;
     cms_synth[voice].voice = 0;
     cms_synth[voice].velocity = 0;
+   }
 }
 
 void cmsNoteOn(unsigned char channel, unsigned char note, unsigned char velocity)
@@ -499,6 +515,71 @@ void cmsNoteOn(unsigned char channel, unsigned char note, unsigned char velocity
   unsigned notefreq;
   int pitch;
 
+  if (channel == 9)
+  {
+    if (velocity != 0)
+       {
+#ifdef CMS_DEBUG
+       debug_log("DRUM ON note= %u\n",note);
+#endif
+	CMS_SetRegister(cmsPort+2, 0x19, 0x84); // single dacay
+	switch (note) {
+		case 37: // Side Stick
+			CMS_SetRegister(cmsPort+2, 0x16, 0x00); // noise gen 1 31.3kHz
+			CMS_SetRegister(cmsPort+2, 0x15, 0x20); // noise ch 11
+			cmsSound(11,0,2,atten[velocity],atten[velocity]);
+			break;
+		case 38: // Acoustic Snare
+			CMS_SetRegister(cmsPort+2, 0x16, 0x00); // noise gen 1 31.3kHz
+			CMS_SetRegister(cmsPort+2, 0x15, 0x20); // noise ch 11
+			cmsSound(11,0,0,atten[velocity],atten[velocity]);
+			break;
+		case 39: // Hand Clap
+			CMS_SetRegister(cmsPort+2, 0x16, 0x10); // noise gen 1 15.6kHz
+			CMS_SetRegister(cmsPort+2, 0x15, 0x20); // noise ch 11
+			cmsSound(11,0,3,atten[velocity],atten[velocity]);
+			break;
+		case 40: // Electric Snare
+			CMS_SetRegister(cmsPort+2, 0x16, 0x10); // noise gen 1 15.6kHz
+			CMS_SetRegister(cmsPort+2, 0x15, 0x20); // noise ch 11
+			cmsSound(11,0,1,atten[velocity],atten[velocity]);
+			break;
+		case 42: // Closed Hi Hat
+			CMS_SetRegister(cmsPort+2, 0x16, 0x10); // noise gen 1 15.6kHz
+			CMS_SetRegister(cmsPort+2, 0x15, 0x20); // noise ch 11
+			cmsSound(11,0,2,atten[velocity],atten[velocity]);
+			break;
+		case 44: // Pedal Hi-Hat
+			CMS_SetRegister(cmsPort+2, 0x16, 0x10); // noise gen 1 15.6kHz
+			CMS_SetRegister(cmsPort+2, 0x15, 0x20); // noise ch 11
+			cmsSound(11,0,0,atten[velocity],atten[velocity]);
+			break;
+		case 52: // Chinese Cymbal
+			CMS_SetRegister(cmsPort+2, 0x16, 0x20); // noise gen 1 7.6kHz
+			CMS_SetRegister(cmsPort+2, 0x15, 0x20); // noise ch 11
+			cmsSound(11,0,2,atten[velocity],atten[velocity]);
+			break;
+		case 55: // Splash Cymbal
+			CMS_SetRegister(cmsPort+2, 0x16, 0x20); // noise gen 1 7.6kHz
+			CMS_SetRegister(cmsPort+2, 0x15, 0x20); // noise ch 11
+			cmsSound(11,0,0,atten[velocity],atten[velocity]);
+			break;
+		case 71: // Short Whistle
+		case 72: // Long Whistle
+			cmsSound(11,0,6,atten[velocity],atten[velocity]);
+			break;
+		default:
+			cmsSound(11,0,1,atten[velocity],atten[velocity]);
+        }
+       }
+    else
+       {
+	CMS_SetRegister(cmsPort+2, 0x19, 0x0);
+	CMS_SetRegister(cmsPort+2, 0x15, 0x0); // noise ch 11
+	cmsDisableVoice(11);
+       }
+  }
+  else
   if (velocity != 0)
   {
 /*
@@ -581,7 +662,9 @@ void cmsNoteOn(unsigned char channel, unsigned char note, unsigned char velocity
 				octave++;
 			}
 
+#ifndef DRUMS_ONLY
 		cmsSound(voice,CMSFreqMap[((notefreq-489)*128) / 489],octave,atten[velocity],atten[velocity]); 
+#endif
 
 		cms_synth[voice].note = note;
 		cms_synth[voice].priority = NotePriority;
